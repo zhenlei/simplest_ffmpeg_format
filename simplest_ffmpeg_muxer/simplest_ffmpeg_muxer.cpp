@@ -1,21 +1,21 @@
 /**
- * 最简单的基于FFmpeg的视音频复用器
+ * 脳卯艗貌碌楼碌脛禄霉脫脷FFmpeg碌脛脢脫脪么脝碌啪沤脫脙脝梅
  * Simplest FFmpeg Muxer
  *
- * 雷霄骅 Lei Xiaohua
+ * 脌脳脧枚忙猫 Lei Xiaohua
  * leixiaohua1020@126.com
- * 中国传媒大学/数字电视技术
+ * 脰脨鹿煤沤芦脙艙沤贸脩搂/脢媒脳脰碌莽脢脫艗艗脢玫
  * Communication University of China / Digital TV Technology
  * http://blog.csdn.net/leixiaohua1020
  *
- * 本程序可以将视频码流和音频码流打包到一种封装格式中。
- * 程序中将AAC编码的音频码流和H.264编码的视频码流打包成
- * MPEG2TS封装格式的文件。
- * 需要注意的是本程序并不改变视音频的编码格式。
+ * 卤鸥鲁脤脨貌驴脡脪脭艙芦脢脫脝碌脗毛脕梅潞脥脪么脝碌脗毛脕梅沤貌掳眉碌艙脪禄脰脰路芒脳掳啪帽脢艙脰脨隆拢
+ * 鲁脤脨貌脰脨艙芦AAC卤脿脗毛碌脛脪么脝碌脗毛脕梅潞脥H.264卤脿脗毛碌脛脢脫脝碌脗毛脕梅沤貌掳眉鲁脡
+ * MPEG2TS路芒脳掳啪帽脢艙碌脛脦脛艗镁隆拢
+ * 脨猫脪陋脳垄脪芒碌脛脢脟卤鸥鲁脤脨貌虏垄虏禄啪脛卤盲脢脫脪么脝碌碌脛卤脿脗毛啪帽脢艙隆拢
  *
- * This software mux a video bitstream and a audio bitstream 
+ * This software mux a video bitstream and a audio bitstream
  * together into a file.
- * In this example, it mux a H.264 bitstream (in MPEG2TS) and 
+ * In this example, it mux a H.264 bitstream (in MPEG2TS) and
  * a AAC bitstream file together into MP4 format file.
  *
  */
@@ -43,20 +43,20 @@ extern "C"
 #endif
 
 /*
-FIX: H.264 in some container format (FLV, MP4, MKV etc.) need 
+FIX: H.264 in some container format (FLV, MP4, MKV etc.) need
 "h264_mp4toannexb" bitstream filter (BSF)
   *Add SPS,PPS in front of IDR frame
   *Add start code ("0,0,0,1") in front of NALU
 H.264 in some container (MPEG2TS) don't need this BSF.
 */
-//'1': Use H.264 Bitstream Filter 
+//'1': Use H.264 Bitstream Filter
 #define USE_H264BSF 0
 
 /*
-FIX:AAC in some container format (FLV, MP4, MKV etc.) need 
+FIX:AAC in some container format (FLV, MP4, MKV etc.) need
 "aac_adtstoasc" bitstream filter (BSF)
 */
-//'1': Use AAC Bitstream Filter 
+//'1': Use AAC Bitstream Filter
 #define USE_AACBSF 0
 
 
@@ -115,9 +115,9 @@ int main(int argc, char* argv[])
 
 	for (i = 0; i < ifmt_ctx_v->nb_streams; i++) {
 		//Create output AVStream according to input AVStream
-		if(ifmt_ctx_v->streams[i]->codec->codec_type==AVMEDIA_TYPE_VIDEO){
+		if(ifmt_ctx_v->streams[i]->codecpar->codec_type==AVMEDIA_TYPE_VIDEO){
 		AVStream *in_stream = ifmt_ctx_v->streams[i];
-		AVStream *out_stream = avformat_new_stream(ofmt_ctx, in_stream->codec->codec);
+		AVStream *out_stream = avformat_new_stream(ofmt_ctx, ifmt_ctx_v->video_codec);
 		videoindex_v=i;
 		if (!out_stream) {
 			printf( "Failed allocating output stream\n");
@@ -126,13 +126,13 @@ int main(int argc, char* argv[])
 		}
 		videoindex_out=out_stream->index;
 		//Copy the settings of AVCodecContext
-		if (avcodec_copy_context(out_stream->codec, in_stream->codec) < 0) {
-			printf( "Failed to copy context from input to output stream codec context\n");
+		if (avcodec_parameters_from_context(out_stream->codecpar,in_stream->codec) < 0) {
+			printf( "Failed to copy context from input to output stream codecpar context\n");
 			goto end;
 		}
-		out_stream->codec->codec_tag = 0;
-		if (ofmt_ctx->oformat->flags & AVFMT_GLOBALHEADER)
-			out_stream->codec->flags |= CODEC_FLAG_GLOBAL_HEADER;
+		out_stream->codecpar->codec_tag = 0;
+		/* if (ofmt_ctx->oformat->flags & AVFMT_GLOBALHEADER) */
+		/* 	out_stream->codec->flags |= CODEC_FLAG_GLOBAL_HEADER; */
 		break;
 		}
 	}
@@ -155,8 +155,8 @@ int main(int argc, char* argv[])
 				goto end;
 			}
 			out_stream->codec->codec_tag = 0;
-			if (ofmt_ctx->oformat->flags & AVFMT_GLOBALHEADER)
-				out_stream->codec->flags |= CODEC_FLAG_GLOBAL_HEADER;
+			/* if (ofmt_ctx->oformat->flags & AVFMT_GLOBALHEADER) */
+			/* 	out_stream->codec->flags |= CODEC_FLAG_GLOBAL_HEADER; */
 
 			break;
 		}
@@ -181,10 +181,10 @@ int main(int argc, char* argv[])
 
 	//FIX
 #if USE_H264BSF
-	AVBitStreamFilterContext* h264bsfc =  av_bitstream_filter_init("h264_mp4toannexb"); 
+	AVBitStreamFilterContext* h264bsfc =  av_bitstream_filter_init("h264_mp4toannexb");
 #endif
 #if USE_AACBSF
-	AVBitStreamFilterContext* aacbsfc =  av_bitstream_filter_init("aac_adtstoasc"); 
+	AVBitStreamFilterContext* aacbsfc =  av_bitstream_filter_init("aac_adtstoasc");
 #endif
 
 	while (1) {
@@ -203,7 +203,7 @@ int main(int argc, char* argv[])
 					out_stream = ofmt_ctx->streams[stream_index];
 
 					if(pkt.stream_index==videoindex_v){
-						//FIX：No PTS (Example: Raw H.264)
+						//FIX锛歂o PTS (Example: Raw H.264)
 						//Simple Write PTS
 						if(pkt.pts==AV_NOPTS_VALUE){
 							//Write PTS
@@ -234,7 +234,7 @@ int main(int argc, char* argv[])
 
 					if(pkt.stream_index==audioindex_a){
 
-						//FIX：No PTS
+						//FIX锛歂o PTS
 						//Simple Write PTS
 						if(pkt.pts==AV_NOPTS_VALUE){
 							//Write PTS
@@ -268,8 +268,8 @@ int main(int argc, char* argv[])
 
 
 		//Convert PTS/DTS
-		pkt.pts = av_rescale_q_rnd(pkt.pts, in_stream->time_base, out_stream->time_base, (AVRounding)(AV_ROUND_NEAR_INF|AV_ROUND_PASS_MINMAX));
-		pkt.dts = av_rescale_q_rnd(pkt.dts, in_stream->time_base, out_stream->time_base, (AVRounding)(AV_ROUND_NEAR_INF|AV_ROUND_PASS_MINMAX));
+		pkt.pts = av_rescale_q_rnd(pkt.pts, in_stream->time_base, out_stream->time_base, (enum AVRounding)(AV_ROUND_NEAR_INF|AV_ROUND_PASS_MINMAX));
+		pkt.dts = av_rescale_q_rnd(pkt.dts, in_stream->time_base, out_stream->time_base, (enum AVRounding)(AV_ROUND_NEAR_INF|AV_ROUND_PASS_MINMAX));
 		pkt.duration = av_rescale_q(pkt.duration, in_stream->time_base, out_stream->time_base);
 		pkt.pos = -1;
 		pkt.stream_index=stream_index;
